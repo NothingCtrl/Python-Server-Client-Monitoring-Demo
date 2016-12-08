@@ -63,7 +63,7 @@ class Server(object):
         # join all parts to make final string
         return ''.join(total_data)
 
-    def client_hande(self, client, thread_count, thread_time=5):
+    def client_handle(self, client, thread_count, thread_time=5):
         # thread_time: maximum run time of thread, note that if timeout > thread_time,
         # data = client.recv(102400) still waiting in first loop
         end_time = time.time() + thread_time
