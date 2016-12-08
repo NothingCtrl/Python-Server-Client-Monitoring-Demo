@@ -52,7 +52,7 @@ def client_service(count):
         c.send(xor_crypt_string("If this message reach sever, thread not terminated after time out", encode=True))
 
 i = 1
-while i <= 3:
+while i <= 100:
     print i
     threading.Thread(target=client_service, args=(i,)).start()
     time.sleep(.2)

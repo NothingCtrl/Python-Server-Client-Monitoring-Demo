@@ -4,6 +4,8 @@ import logging
 import time
 
 host = socket.gethostname()
+# maximum thread allow run the same time
+maximum_run_thread = 10
 # listen port
 port = 9999
 # encode / decode key
@@ -15,9 +17,10 @@ class Server(object):
         self.host = socket.gethostname()
         self.port = listen_port
         self.count_thread = 0
+        self.total_thread = 0
         self.key = pass_key
-        # timeout: set time close of connection if no data receive from client
-        self.socket_timeout = 2
+        # Maximum time get data from each client
+        self.client_timeout = 2
 
     def xor_crypt_string(self, data, encode=False, decode=False):
         """
@@ -39,14 +42,14 @@ class Server(object):
 
     def recv_timeout(self, client):
         # timeout reset (recouting) everytime have data from client
-        # client.settimeout(self.socket_timeout)
+        # client.settimeout(self.client_timeout)
         client.setblocking(0)
         begin = time.time()
-        end_time = begin + self.socket_timeout + 0.5
+        end_time = begin + self.client_timeout + 0.5
         total_data = []
         # sleep_count = 0
         while time.time() < end_time:
-            if total_data and time.time() - begin > self.socket_timeout:
+            if total_data and time.time() - begin > self.client_timeout:
                 break
             try:
                 data = client.recv(102400)
@@ -77,6 +80,7 @@ class Server(object):
                 client.close()
                 break
         client.close()
+        self.count_thread -= 1
         print "End connection... ", thread_count
 
     def run(self):
@@ -86,11 +90,19 @@ class Server(object):
         serversocket.listen(120)
         while True:
             try:
-                client, address = serversocket.accept()
-                self.count_thread += 1
-                threading.Thread(target=self.client_hande, args=(client, self.count_thread)).start()
+                if self.count_thread < maximum_run_thread:
+                    client, address = serversocket.accept()
+                    self.count_thread += 1
+                    self.total_thread += 1
+                    threading.Thread(target=self.client_hande, args=(client, self.total_thread)).start()
+                    print "Thread %d created, current running threads: %d, client address: %s" % \
+                          (self.total_thread, self.count_thread, address[0])
+                else:
+                    print "Maximum threads reach!"
+                    time.sleep(1)
             except Exception as e:
                 logging.exception(e)
+                time.sleep(1)
 
 # start server
 Server(9999, key).run()
