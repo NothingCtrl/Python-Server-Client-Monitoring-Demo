@@ -21,6 +21,8 @@ class Server(object):
         self.key = pass_key
         # Maximum time get data from each client
         self.client_timeout = 2
+        # Flag to know if task need run daily is run or not
+        self.last_day_run = ''
 
     def xor_crypt_string(self, data, encode=False, decode=False):
         """
@@ -83,6 +85,17 @@ class Server(object):
         self.count_thread -= 1
         print "End connection... ", thread_count
 
+    def daily_task(self):
+        """
+        This function only run one each day (example for maintenance database)
+        :return:
+        """
+        today = time.strftime("%Y-%m-%d")
+        if today != self.last_day_run:
+            # run task
+            print "Daily task run..."
+            self.last_day_run = today
+
     def run(self):
         print "Server start, listen port: ", self.port
         serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -94,9 +107,10 @@ class Server(object):
                     client, address = serversocket.accept()
                     self.count_thread += 1
                     self.total_thread += 1
-                    threading.Thread(target=self.client_hande, args=(client, self.total_thread)).start()
+                    threading.Thread(target=self.client_handle, args=(client, self.total_thread)).start()
                     print "Thread %d created, current running threads: %d, client address: %s" % \
                           (self.total_thread, self.count_thread, address[0])
+                    self.daily_task()
                 else:
                     print "Maximum threads reach!"
                     time.sleep(1)
